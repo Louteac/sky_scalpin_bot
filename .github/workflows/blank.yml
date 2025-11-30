@@ -1,0 +1,128 @@
+import telebot
+import time
+import traceback
+
+# --------------------------------------------------------------
+# CONFIGURATION
+# --------------------------------------------------------------
+
+  
+
+CHANNEL_LINK = https://t.me/+u9IxYXiAh88yOTVk
+COOLDOWN_SECONDS = 24 * 3600  # 24h cooldown
+
+last_used = {}  # cooldown tracking
+
+# --------------------------------------------------------------
+# PROMOTION MESSAGES
+# --------------------------------------------------------------
+
+PROMO_SHORT = f"""
+🚀 SKY_SCALPIN — Your Daily Scalping Edge!
+Fast signals • Smart entries • Clean analysis  
+👉 {CHANNEL_LINK}
+"""
+
+PROMO_LONG = f"""
+💹 SKY_SCALPIN — The Home of Smart Scalpers!
+
+We provide:
+✔ Real market analysis  
+✔ High-probability scalping setups  
+✔ Clear risk management  
+✔ Fast updates
+
+Join our growing community and level up your trading!  
+👉 {CHANNEL_LINK}
+🔥 Free to join — Don't miss the next move!
+"""
+
+PROMO_BANNER = f"""
+📊 SKY_SCALPIN  
+Daily Signals • Scalping • Analysis  
+Fast. Clear. Accurate.  
+Join Now → {CHANNEL_LINK}
+"""
+
+HASHTAGS = "#trading #forex #crypto #scalping #signals #daytrading"
+
+# --------------------------------------------------------------
+# COOLDOWN CHECK
+# --------------------------------------------------------------
+
+def can_use(user_id):
+    now = time.time()
+    if user_id not in last_used:
+        last_used[user_id] = now
+        return True
+    if now - last_used[user_id] >= COOLDOWN_SECONDS:
+        last_used[user_id] = now
+        return True
+    return False
+
+# --------------------------------------------------------------
+# COMMANDS
+# --------------------------------------------------------------
+
+@bot.message_handler(commands=['start'])
+def start_cmd(message):
+    bot.reply_to(message, "Welcome! Use /promo_short or /promo_long to get promo messages.")
+
+@bot.message_handler(commands=['promo_short'])
+def promo_short(message):
+    user_id = message.from_user.id
+    if not can_use(user_id):
+        bot.reply_to(message, "⚠ You can only send a promo every 24 hours.")
+        return
+    bot.reply_to(message, PROMO_SHORT + "\n" + HASHTAGS)
+
+@bot.message_handler(commands=['promo_long'])
+def promo_long(message):
+    user_id = message.from_user.id
+    if not can_use(user_id):
+        bot.reply_to(message, "⚠ You can only send a promo every 24 hours.")
+        return
+    bot.reply_to(message, PROMO_LONG + "\n" + HASHTAGS)
+
+@bot.message_handler(commands=['promo_banner'])
+def promo_banner(message):
+    user_id = message.from_user.id
+    if not can_use(user_id):
+        bot.reply_to(message, "⚠ You can only send a promo every 24 hours.")
+        return
+    bot.reply_to(message, PROMO_BANNER)
+
+# --------------------------------------------------------------
+# AUTO SIGNAL KEYWORDS
+# --------------------------------------------------------------
+
+@bot.message_handler(func=lambda message: True)
+def auto_reply(message):
+    text = message.text.lower()
+
+    if any(k in text for k in ['trading', 'signal', 'buy', 'sell']):
+        signal = (
+            "🚀 BUY BTC/USDT at $50,000\n"
+            "🎯 Target: $52,000\n"
+            "🛑 Stop-loss: $48,000\n\n"
+            "(Disclaimer: This is not financial advice.)"
+        )
+        bot.reply_to(message, f"{signal}\n\nMore signals here: {CHANNEL_LINK}")
+
+    elif 'join' in text or 'group' in text:
+        bot.reply_to(message, f"Join our trading community: {CHANNEL_LINK}")
+
+    else:
+        bot.reply_to(message, "Hi! Ask me about trading signals or type /promo_short.")
+
+# --------------------------------------------------------------
+# AUTO-RESTART LOOP (so bot keeps running)
+# --------------------------------------------------------------
+
+while True:
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        print("Error:", e)
+        traceback.print_exc()
+        time.sleep(5)  # wait 5 sec then restart
